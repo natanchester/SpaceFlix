@@ -25,8 +25,12 @@ app.use(cors({
     // Requisições sem origin (Postman, curl) são permitidas
     if (!origin) return callback(null, true);
 
-    // Verifica se é permitido
-    if (allowedOrigins.includes(origin)) {
+    // Verifica se é permitido ou se é um IP local na porta 5173
+    const isLocalIP = /^https?:\/\/192\.168\.\d+\.\d+:5173$/.test(origin) || 
+                      /^https?:\/\/10\.\d+\.\d+\.\d+:5173$/.test(origin) ||
+                      /^https?:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+:5173$/.test(origin);
+    
+    if (allowedOrigins.includes(origin) || isLocalIP) {
       return callback(null, true);
     } else {
       console.log('Blocked CORS:', origin);
