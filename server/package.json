@@ -1,0 +1,22 @@
+{
+  "name": "flixplayer-server",
+  "version": "1.0.0",
+  "description": "Backend server for FlixPlayer - Netflix-style offline video player",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@types/node": "^24.3.0",
+    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "fs": "^0.0.1-security",
+    "jsonwebtoken": "^9.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "path": "^0.12.7"
+  }
+}

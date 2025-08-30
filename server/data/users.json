@@ -1,0 +1,14 @@
+[
+  {
+    "id": "admin",
+    "username": "admin",
+    "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+    "isAdmin": true
+  },
+  {
+    "id": "user",
+    "username": "user",
+    "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+    "isAdmin": false
+  }
+]
