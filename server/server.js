@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import multer from 'multer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +52,7 @@ app.use(express.json());
 // Ensure directories exist
 const dataDir = path.join(__dirname, 'data');
 const videosDir = path.join(__dirname, 'videos');
+const thumbnailsDir = path.join(__dirname, 'thumbnails');
 
 try {
   await fs.access(dataDir);
@@ -63,6 +65,59 @@ try {
 } catch {
   await fs.mkdir(videosDir, { recursive: true });
 }
+
+try {
+  await fs.access(thumbnailsDir);
+} catch {
+  await fs.mkdir(thumbnailsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (file.fieldname === 'video') {
+      cb(null, videosDir);
+    } else if (file.fieldname === 'thumbnail') {
+      cb(null, thumbnailsDir);
+    }
+  },
+  filename: (req, file, cb) => {
+    // Keep original filename with timestamp to avoid conflicts
+    const timestamp = Date.now();
+    const originalName = file.originalname;
+    const extension = path.extname(originalName);
+    const nameWithoutExt = path.basename(originalName, extension);
+    cb(null, `${nameWithoutExt}_${timestamp}${extension}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 * 1024, // 5GB for videos
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.fieldname === 'video') {
+      const videoExtensions = ['.mp4', '.mkv', '.avi', '.webm', '.mov', '.m4v'];
+      const extension = path.extname(file.originalname).toLowerCase();
+      if (videoExtensions.includes(extension)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Formato de vídeo não suportado'));
+      }
+    } else if (file.fieldname === 'thumbnail') {
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+      const extension = path.extname(file.originalname).toLowerCase();
+      if (imageExtensions.includes(extension)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Formato de imagem não suportado'));
+      }
+    } else {
+      cb(new Error('Campo de arquivo não reconhecido'));
+    }
+  }
+});
 
 // Initialize data files
 const usersFile = path.join(dataDir, 'users.json');
@@ -444,6 +499,63 @@ app.post('/videos/scan', authenticateToken, async (req, res) => {
     console.error('Error scanning videos:', error);
     res.status(500).json({ error: 'Failed to scan videos directory' });
   }
+});
+
+// File upload endpoints
+app.post('/upload/video', authenticateToken, upload.single('video'), async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No video file provided' });
+    }
+    
+    res.json({
+      success: true,
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size
+    });
+  } catch (error) {
+    console.error('Video upload error:', error);
+    res.status(500).json({ error: 'Failed to upload video' });
+  }
+});
+
+app.post('/upload/thumbnail', authenticateToken, upload.single('thumbnail'), async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No thumbnail file provided' });
+    }
+    
+    res.json({
+      success: true,
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      url: `/thumbnails/${req.file.filename}`
+    });
+  } catch (error) {
+    console.error('Thumbnail upload error:', error);
+    res.status(500).json({ error: 'Failed to upload thumbnail' });
+  }
+});
+
+// Serve thumbnail files
+app.get('/thumbnails/:filename', (req, res) => {
+  const { filename } = req.params;
+  const thumbnailPath = path.join(thumbnailsDir, filename);
+  
+  res.sendFile(thumbnailPath, (err) => {
+    if (err) {
+      res.status(404).json({ error: 'Thumbnail not found' });
+    }
+  });
 });
 
 app.listen(PORT, () => {

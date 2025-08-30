@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Save, X, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, RefreshCw, Upload, Image, Video } from 'lucide-react';
 import { useVideo, Video, Episode } from '../context/VideoContext';
+import { buildApiUrl, getAuthHeaders } from '../utils/config';
 
 const Admin: React.FC = () => {
   const { videos, scanVideos, updateVideo, deleteVideo, isLoading } = useVideo();
   const [editingVideo, setEditingVideo] = useState<Video | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Video>>({
     title: '',
@@ -84,6 +87,73 @@ const Admin: React.FC = () => {
     const updatedEpisodes = [...(formData.episodes || [])];
     updatedEpisodes.splice(index, 1);
     setFormData({ ...formData, episodes: updatedEpisodes });
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingVideo(true);
+    const formDataUpload = new FormData();
+    formDataUpload.append('video', file);
+
+    try {
+      const response = await fetch(buildApiUrl('/upload/video'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('flixplayer-token')}`
+        },
+        body: formDataUpload
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setFormData({ ...formData, filename: result.filename });
+        alert(`Vídeo enviado com sucesso: ${result.originalName}`);
+      } else {
+        const error = await response.json();
+        alert(`Erro no upload: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Erro ao enviar vídeo');
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingThumbnail(true);
+    const formDataUpload = new FormData();
+    formDataUpload.append('thumbnail', file);
+
+    try {
+      const response = await fetch(buildApiUrl('/upload/thumbnail'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('flixplayer-token')}`
+        },
+        body: formDataUpload
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const thumbnailUrl = buildApiUrl(result.url);
+        setFormData({ ...formData, cover: thumbnailUrl });
+        alert(`Thumbnail enviado com sucesso: ${result.originalName}`);
+      } else {
+        const error = await response.json();
+        alert(`Erro no upload: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Erro ao enviar thumbnail');
+    } finally {
+      setUploadingThumbnail(false);
+    }
   };
 
   return (
@@ -229,25 +299,57 @@ const Admin: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Capa (URL)</label>
-                  <input
-                    type="url"
-                    value={formData.cover}
-                    onChange={(e) => setFormData({ ...formData, cover: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm md:text-base"
-                    placeholder="https://example.com/image.jpg"
-                  />
+                  <div className="space-y-2">
+                    <input
+                      type="url"
+                      value={formData.cover}
+                      onChange={(e) => setFormData({ ...formData, cover: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm md:text-base"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-400 text-xs">ou</span>
+                      <label className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-md cursor-pointer transition-colors duration-200 text-sm">
+                        <Image className="w-4 h-4" />
+                        <span>{uploadingThumbnail ? 'Enviando...' : 'Upload Thumbnail'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleThumbnailUpload}
+                          disabled={uploadingThumbnail}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 {formData.type === 'movie' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Nome do Arquivo</label>
-                    <input
-                      type="text"
-                      value={formData.filename}
-                      onChange={(e) => setFormData({ ...formData, filename: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm md:text-base"
-                      placeholder="movie.mp4"
-                    />
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={formData.filename}
+                        onChange={(e) => setFormData({ ...formData, filename: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm md:text-base"
+                        placeholder="movie.mp4"
+                      />
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-400 text-xs">ou</span>
+                        <label className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-md cursor-pointer transition-colors duration-200 text-sm">
+                          <Video className="w-4 h-4" />
+                          <span>{uploadingVideo ? 'Enviando...' : 'Upload Vídeo'}</span>
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={handleVideoUpload}
+                            disabled={uploadingVideo}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -287,6 +389,42 @@ const Admin: React.FC = () => {
                             className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs md:text-sm mb-2"
                             placeholder="arquivo.mp4"
                           />
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-gray-400 text-xs">ou</span>
+                            <label className="flex items-center space-x-1 bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded cursor-pointer transition-colors duration-200 text-xs">
+                              <Video className="w-3 h-3" />
+                              <span>Upload</span>
+                              <input
+                                type="file"
+                                accept="video/*"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+
+                                  const formDataUpload = new FormData();
+                                  formDataUpload.append('video', file);
+
+                                  try {
+                                    const response = await fetch(buildApiUrl('/upload/video'), {
+                                      method: 'POST',
+                                      headers: {
+                                        'Authorization': `Bearer ${localStorage.getItem('flixplayer-token')}`
+                                      },
+                                      body: formDataUpload
+                                    });
+
+                                    if (response.ok) {
+                                      const result = await response.json();
+                                      updateEpisode(index, 'filename', result.filename);
+                                    }
+                                  } catch (error) {
+                                    console.error('Episode upload error:', error);
+                                  }
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
                           <textarea
                             value={episode.description}
                             onChange={(e) => updateEpisode(index, 'description', e.target.value)}
