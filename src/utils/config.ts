@@ -1,7 +1,6 @@
 // Configuration for API endpoints with domain support
 const getApiBaseUrl = (): string => {
   const hostname = window.location.hostname;
-  const protocol = window.location.protocol;
 
   // Se estamos acessando pelo túnel do frontend
   if (hostname === 'f.natanchestern8n.com.br') {
@@ -11,21 +10,21 @@ const getApiBaseUrl = (): string => {
 
   // Modo desenvolvimento
   if (import.meta.env.DEV) {
-    return `${protocol}//localhost:3001`;
+    return 'http://localhost:3001';
   }
 
   // Localhost
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return `${protocol}//localhost:3001`;
+    return 'http://localhost:3001';
   }
 
   // Acesso via IP
   if (hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
-    return `${protocol}//${hostname}:3001`;
+    return `http://${hostname}:3001`;
   }
 
   // Fallback
-  return `${protocol}//localhost:3001`;
+  return 'http://localhost:3001';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
