@@ -1,24 +1,19 @@
 // Configuration for API endpoints with domain support
 const getApiBaseUrl = (): string => {
   const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
 
   // Se estamos acessando pelo túnel do frontend
   if (hostname === 'f.natanchestern8n.com.br') {
     return 'https://b1.natanchestern8n.com.br'; // backend via túnel
   }
 
-
-  // Modo desenvolvimento
-  if (import.meta.env.DEV) {
-    return 'http://localhost:3001';
-  }
-
-  // Localhost
+  // Localhost - sempre usar HTTP independente do protocolo do frontend
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:3001';
   }
 
-  // Acesso via IP
+  // Acesso via IP - usar HTTP
   if (hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
     return `http://${hostname}:3001`;
   }

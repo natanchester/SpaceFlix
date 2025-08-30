@@ -58,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       } else {
         // Token is invalid, remove it
+        console.error('Session check failed:', response.status, response.statusText);
         localStorage.removeItem('flixplayer-token');
         setUser(null);
         setIsAuthenticated(false);

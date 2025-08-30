@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from 'lucide-react';
 import { useVideo } from '../context/VideoContext';
 import { buildApiUrl } from '../utils/config';
 
 const VideoPlayer: React.FC = () => {
   const { videoId } = useParams<{ videoId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { videos } = useVideo();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -21,10 +22,13 @@ const VideoPlayer: React.FC = () => {
   const video = videos.find(v => v.id === videoId);
 
   useEffect(() => {
-    if (video?.type === 'series' && video.episodes && video.episodes.length > 0) {
+    const episodeParam = searchParams.get('episode');
+    if (episodeParam) {
+      setSelectedEpisode(episodeParam);
+    } else if (video?.type === 'series' && video.episodes && video.episodes.length > 0) {
       setSelectedEpisode(video.episodes[0].id);
     }
-  }, [video]);
+  }, [video, searchParams]);
 
   useEffect(() => {
     const handleTimeUpdate = () => {

@@ -56,6 +56,8 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setVideos(data);
       } else if (response.status === 401) {
         console.error('Unauthorized access to videos');
+      } else {
+        console.error('Error fetching videos:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching videos:', error);

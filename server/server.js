@@ -17,7 +17,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'flixplayer-secret-key-2024';
 const allowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  'https://f.natanchestern8n.com.br'
+  'https://f.natanchestern8n.com.br',
+  /^https?:\/\/localhost:5173$/,
+  /^https?:\/\/127\.0\.0\.1:5173$/
 ];
 
 app.use(cors({
@@ -25,31 +27,32 @@ app.use(cors({
     // Requisições sem origin (Postman, curl) são permitidas
     if (!origin) return callback(null, true);
 
-    // Verifica se é permitido ou se é um IP local na porta 5173
+    // Verifica se é um origin permitido
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      } else if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return false;
+    });
+    
+    // Verifica se é um IP local na porta 5173
     const isLocalIP = /^https?:\/\/192\.168\.\d+\.\d+:5173$/.test(origin) || 
                       /^https?:\/\/10\.\d+\.\d+\.\d+:5173$/.test(origin) ||
                       /^https?:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+:5173$/.test(origin);
     
-    if (allowedOrigins.includes(origin) || isLocalIP) {
+    if (isAllowed || isLocalIP) {
       return callback(null, true);
     } else {
       console.log('Blocked CORS:', origin);
       return callback(new Error('CORS not allowed'));
     }
   },
-  credentials: true,              // necessário para Authorization
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization']
-}));
-
-// Necessário habilitar OPTIONS para todas as rotas (preflight)
-app.options('*', cors({
-  origin: allowedOrigins,
   credentials: true,
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
 
 app.use(express.json());
 
