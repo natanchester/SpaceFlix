@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Save, X, RefreshCw, Upload, Image, Video } from 'lucide-react';
-import { useVideo, Video, Episode } from '../context/VideoContext';
+import { useVideo, Video as VideoType, Episode } from '../context/VideoContext';
 import { buildApiUrl, getAuthHeaders } from '../utils/config';
 
 const Admin: React.FC = () => {
   const { videos, scanVideos, updateVideo, deleteVideo, isLoading } = useVideo();
-  const [editingVideo, setEditingVideo] = useState<Video | null>(null);
+  const [editingVideo, setEditingVideo] = useState<VideoType | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
 
-  const [formData, setFormData] = useState<Partial<Video>>({
+  const [formData, setFormData] = useState<Partial<VideoType>>({
     title: '',
     description: '',
     type: 'movie',
@@ -22,7 +22,7 @@ const Admin: React.FC = () => {
     episodes: []
   });
 
-  const handleEdit = (video: Video) => {
+  const handleEdit = (video: VideoType) => {
     setEditingVideo(video);
     setFormData(video);
     setShowAddForm(true);
@@ -31,7 +31,7 @@ const Admin: React.FC = () => {
   const handleSave = async () => {
     if (!formData.title || !formData.description) return;
     
-    const videoData: Video = {
+    const videoData: VideoType = {
       id: editingVideo?.id || `video_${Date.now()}`,
       title: formData.title,
       description: formData.description,
