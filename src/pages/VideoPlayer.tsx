@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward, Settings } from 'lucide-react';
 import { useVideo } from '../context/VideoContext';
 import { buildApiUrl } from '../utils/config';
 
@@ -18,6 +18,9 @@ const VideoPlayer: React.FC = () => {
   const [showControls, setShowControls] = useState(true);
   const [selectedEpisode, setSelectedEpisode] = useState<string>('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [quality, setQuality] = useState('auto');
 
   const video = videos.find(v => v.id === videoId);
 
@@ -101,6 +104,14 @@ const VideoPlayer: React.FC = () => {
         setIsFullscreen(true);
       }
     }
+  };
+
+  const handlePlaybackRateChange = (rate: number) => {
+    setPlaybackRate(rate);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = rate;
+    }
+    setShowSettings(false);
   };
 
   // Hide controls after 3 seconds of inactivity
@@ -235,6 +246,87 @@ const VideoPlayer: React.FC = () => {
               </div>
               
               <div className="flex items-center space-x-2">
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="text-white hover:text-red-400 transition-colors duration-200"
+                  >
+                    <Settings className="w-5 h-5 md:w-6 md:h-6" />
+                  </button>
+                  
+                  {showSettings && (
+                    <div className="absolute bottom-full right-0 mb-2 bg-gray-900 border border-gray-700 rounded-lg p-4 min-w-48 z-50">
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="text-white text-sm font-medium mb-2">Velocidade</h4>
+                          <div className="space-y-1">
+                            {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
+                              <button
+                                key={rate}
+                                onClick={() => handlePlaybackRateChange(rate)}
+                                className={`block w-full text-left px-2 py-1 text-sm rounded transition-colors duration-200 ${
+                                  playbackRate === rate
+                                    ? 'bg-red-600 text-white'
+                                    : 'text-gray-300 hover:bg-gray-700'
+                                }`}
+                              >
+                                {rate}x {rate === 1 ? '(Normal)' : ''}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-white text-sm font-medium mb-2">Volume</h4>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={toggleMute}
+                              className="text-white hover:text-red-400 transition-colors duration-200"
+                            >
+                              {isMuted ? (
+                                <VolumeX className="w-4 h-4" />
+                              ) : (
+                                <Volume2 className="w-4 h-4" />
+                              )}
+                            </button>
+                            <input
+                              type="range"
+                              min={0}
+                              max={1}
+                              step={0.1}
+                              value={isMuted ? 0 : volume}
+                              onChange={handleVolumeChange}
+                              className="flex-1 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                            />
+                            <span className="text-white text-xs w-8">
+                              {Math.round((isMuted ? 0 : volume) * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-white text-sm font-medium mb-2">Qualidade</h4>
+                          <div className="space-y-1">
+                            {['auto', '1080p', '720p', '480p'].map((q) => (
+                              <button
+                                key={q}
+                                onClick={() => setQuality(q)}
+                                className={`block w-full text-left px-2 py-1 text-sm rounded transition-colors duration-200 ${
+                                  quality === q
+                                    ? 'bg-red-600 text-white'
+                                    : 'text-gray-300 hover:bg-gray-700'
+                                }`}
+                              >
+                                {q === 'auto' ? 'Automática' : q}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
                 <button
                   onClick={toggleMute}
                   className="md:hidden text-white hover:text-red-400 transition-colors duration-200"
@@ -254,6 +346,14 @@ const VideoPlayer: React.FC = () => {
               </div>
             </div>
           </div>
+          
+          {/* Click outside to close settings */}
+          {showSettings && (
+            <div 
+              className="absolute inset-0 z-40"
+              onClick={() => setShowSettings(false)}
+            />
+          )}
         </div>
       </div>
       

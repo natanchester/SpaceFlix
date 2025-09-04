@@ -13,6 +13,8 @@ import { Loader2 } from 'lucide-react';
 
 function AppRoutes() {
   const { isAuthenticated, user, isLoading } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   if (isLoading) {
     return (
@@ -37,8 +39,16 @@ function AppRoutes() {
           path="/" 
           element={isAuthenticated ? (
             <>
-              <Header />
-              <Home />
+              <Header 
+                onSearchChange={setSearchQuery}
+                onToggleFilters={() => setShowFilters(!showFilters)}
+                searchQuery={searchQuery}
+              />
+              <Home 
+                searchQuery={searchQuery}
+                showFilters={showFilters}
+                onToggleFilters={() => setShowFilters(!showFilters)}
+              />
             </>
           ) : <Navigate to="/login" />} 
         />

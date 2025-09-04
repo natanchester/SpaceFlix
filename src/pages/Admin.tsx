@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Save, X, RefreshCw, Upload, Image, Video } from 'lucide-react';
-import { useVideo, Video as VideoType, Episode } from '../context/VideoContext';
+import { Plus, Edit, Trash2, Save, X, RefreshCw, Upload, Image, Video, Loader2 } from 'lucide-react';
+import { useVideo, VideoType, Episode } from '../context/VideoContext';
 import { buildApiUrl, getAuthHeaders } from '../utils/config';
 
 const Admin: React.FC = () => {
   const { videos, scanVideos, updateVideo, deleteVideo, isLoading } = useVideo();
   const [editingVideo, setEditingVideo] = useState<VideoType | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
-  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState<string>('');
+  const [uploadingThumbnail, setUploadingThumbnail] = useState<string>('');
 
   const [formData, setFormData] = useState<Partial<VideoType>>({
     title: '',
@@ -93,7 +93,7 @@ const Admin: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingVideo(true);
+    setUploadingVideo('main');
     const formDataUpload = new FormData();
     formDataUpload.append('video', file);
 
@@ -118,7 +118,7 @@ const Admin: React.FC = () => {
       console.error('Upload error:', error);
       alert('Erro ao enviar vídeo');
     } finally {
-      setUploadingVideo(false);
+      setUploadingVideo('');
     }
   };
 
@@ -126,7 +126,7 @@ const Admin: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingThumbnail(true);
+    setUploadingThumbnail('main');
     const formDataUpload = new FormData();
     formDataUpload.append('thumbnail', file);
 
@@ -152,10 +152,42 @@ const Admin: React.FC = () => {
       console.error('Upload error:', error);
       alert('Erro ao enviar thumbnail');
     } finally {
-      setUploadingThumbnail(false);
+      setUploadingThumbnail('');
     }
   };
 
+  const handleEpisodeVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>, episodeIndex: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingVideo(`episode_${episodeIndex}`);
+    const formDataUpload = new FormData();
+    formDataUpload.append('video', file);
+
+    try {
+      const response = await fetch(buildApiUrl('/upload/video'), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('flixplayer-token')}`
+        },
+        body: formDataUpload
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        updateEpisode(episodeIndex, 'filename', result.filename);
+        alert(`Vídeo do episódio enviado com sucesso: ${result.originalName}`);
+      } else {
+        const error = await response.json();
+        alert(`Erro no upload: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Episode upload error:', error);
+      alert('Erro ao enviar vídeo do episódio');
+    } finally {
+      setUploadingVideo('');
+    }
+  };
   return (
     <div className="min-h-screen bg-black pt-20 md:pt-24 px-4">
       <div className="max-w-7xl mx-auto">
@@ -311,12 +343,12 @@ const Admin: React.FC = () => {
                       <span className="text-gray-400 text-xs">ou</span>
                       <label className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-md cursor-pointer transition-colors duration-200 text-sm">
                         <Image className="w-4 h-4" />
-                        <span>{uploadingThumbnail ? 'Enviando...' : 'Upload Thumbnail'}</span>
+                        <span>{uploadingThumbnail === 'main' ? 'Enviando...' : 'Upload Thumbnail'}</span>
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleThumbnailUpload}
-                          disabled={uploadingThumbnail}
+                          disabled={uploadingThumbnail === 'main'}
                           className="hidden"
                         />
                       </label>
@@ -338,13 +370,13 @@ const Admin: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <span className="text-gray-400 text-xs">ou</span>
                         <label className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-md cursor-pointer transition-colors duration-200 text-sm">
-                          <Video className="w-4 h-4" />
-                          <span>{uploadingVideo ? 'Enviando...' : 'Upload Vídeo'}</span>
+                          {uploadingVideo === 'main' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
+                          <span>{uploadingVideo === 'main' ? 'Enviando...' : 'Upload Vídeo'}</span>
                           <input
                             type="file"
                             accept="video/*"
                             onChange={handleVideoUpload}
-                            disabled={uploadingVideo}
+                            disabled={uploadingVideo === 'main'}
                             className="hidden"
                           />
                         </label>
@@ -392,35 +424,13 @@ const Admin: React.FC = () => {
                           <div className="flex items-center space-x-2 mb-2">
                             <span className="text-gray-400 text-xs">ou</span>
                             <label className="flex items-center space-x-1 bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded cursor-pointer transition-colors duration-200 text-xs">
-                              <Video className="w-3 h-3" />
-                              <span>Upload</span>
+                              {uploadingVideo === `episode_${index}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Video className="w-3 h-3" />}
+                              <span>{uploadingVideo === `episode_${index}` ? 'Enviando...' : 'Upload'}</span>
                               <input
                                 type="file"
                                 accept="video/*"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-
-                                  const formDataUpload = new FormData();
-                                  formDataUpload.append('video', file);
-
-                                  try {
-                                    const response = await fetch(buildApiUrl('/upload/video'), {
-                                      method: 'POST',
-                                      headers: {
-                                        'Authorization': `Bearer ${localStorage.getItem('flixplayer-token')}`
-                                      },
-                                      body: formDataUpload
-                                    });
-
-                                    if (response.ok) {
-                                      const result = await response.json();
-                                      updateEpisode(index, 'filename', result.filename);
-                                    }
-                                  } catch (error) {
-                                    console.error('Episode upload error:', error);
-                                  }
-                                }}
+                                onChange={(e) => handleEpisodeVideoUpload(e, index)}
+                                disabled={uploadingVideo === `episode_${index}`}
                                 className="hidden"
                               />
                             </label>

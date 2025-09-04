@@ -1,12 +1,19 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Play, Settings, LogOut, Search, Menu, X } from 'lucide-react';
+import { Play, Settings, LogOut, Search, Menu, X, Filter } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onSearchChange?: (query: string) => void;
+  onToggleFilters?: () => void;
+  searchQuery?: string;
+}
+
+const Header: React.FC<HeaderProps> = ({ onSearchChange, onToggleFilters, searchQuery = '' }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [showSearch, setShowSearch] = React.useState(false);
 
   const handleLogout = () => {
     logout();
@@ -42,7 +49,34 @@ const Header: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-2 md:space-x-4">
-          <button className="hidden md:block text-white hover:text-gray-300 transition-colors duration-200">
+          <div className="hidden md:flex items-center space-x-2">
+            {onSearchChange && (
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar filmes e séries..."
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="bg-gray-800/80 text-white placeholder-gray-400 px-4 py-2 pl-10 rounded-md border border-gray-700 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors duration-200 w-64"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+            )}
+            {onToggleFilters && (
+              <button 
+                onClick={onToggleFilters}
+                className="text-white hover:text-gray-300 transition-colors duration-200 p-2"
+                title="Filtros"
+              >
+                <Filter className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+          
+          <button 
+            onClick={() => setShowSearch(!showSearch)}
+            className="md:hidden text-white hover:text-gray-300 transition-colors duration-200"
+          >
             <Search className="w-5 h-5" />
           </button>
           
@@ -76,6 +110,30 @@ const Header: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-sm border-t border-gray-800">
           <div className="px-4 py-4 space-y-4">
+            {onSearchChange && (
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  placeholder="Buscar filmes e séries..."
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="w-full bg-gray-800/80 text-white placeholder-gray-400 px-4 py-2 pl-10 rounded-md border border-gray-700 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors duration-200"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              </div>
+            )}
+            {onToggleFilters && (
+              <button 
+                onClick={() => {
+                  onToggleFilters();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center space-x-2 text-white hover:text-red-400 transition-colors duration-200 py-2 w-full"
+              >
+                <Filter className="w-5 h-5" />
+                <span>Filtros</span>
+              </button>
+            )}
             <Link 
               to="/" 
               className="block text-white hover:text-red-400 transition-colors duration-200 py-2"
@@ -110,6 +168,25 @@ const Header: React.FC = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* Mobile search overlay */}
+      {showSearch && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-sm border-t border-gray-800 p-4">
+          {onSearchChange && (
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar filmes e séries..."
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                className="w-full bg-gray-800/80 text-white placeholder-gray-400 px-4 py-2 pl-10 rounded-md border border-gray-700 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors duration-200"
+                autoFocus
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            </div>
+          )}
         </div>
       )}
     </header>
