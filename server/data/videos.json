@@ -1,14 +1,37 @@
 [
   {
-    "id": "video_1757027134463",
-    "title": "teste",
-    "description": "teste",
+    "id": "sample_movie_1",
+    "title": "Filme de Exemplo",
+    "description": "Um filme de exemplo para testar o sistema de reprodução de vídeos.",
     "type": "movie",
-    "cover": "https://b1.natanchestern8n.com.br/thumbnails/Captura de tela 2025-09-04 091042_1757027103000.png",
-    "filename": "Airbrush-video-enhancer-preview_1757027116821.mp4",
-    "episodes": [],
-    "genre": "",
-    "year": 2020,
-    "rating": 5
+    "cover": "https://images.pexels.com/photos/1040157/pexels-photo-1040157.jpeg",
+    "filename": "sample-movie.mp4",
+    "genre": "Exemplo",
+    "year": 2024,
+    "rating": 8.0
+  },
+  {
+    "id": "sample_series_1",
+    "title": "Série de Exemplo",
+    "description": "Uma série de exemplo para testar o sistema de reprodução de episódios.",
+    "type": "series",
+    "cover": "https://images.pexels.com/photos/1200450/pexels-photo-1200450.jpeg",
+    "genre": "Exemplo",
+    "year": 2024,
+    "rating": 8.5,
+    "episodes": [
+      {
+        "id": "sample_ep1",
+        "name": "Episódio 1 - Piloto",
+        "filename": "sample-episode-1.mp4",
+        "description": "O primeiro episódio da série de exemplo."
+      },
+      {
+        "id": "sample_ep2",
+        "name": "Episódio 2 - Continuação",
+        "filename": "sample-episode-2.mp4",
+        "description": "O segundo episódio da série de exemplo."
+      }
+    ]
   }
 ]

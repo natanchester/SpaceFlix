@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward, Settings } from 'lucide-react';
-import { useVideo } from '../context/VideoContext';
+import { useVideo, VideoType } from '../context/VideoContext';
 import { buildApiUrl } from '../utils/config';
 
 const VideoPlayer: React.FC = () => {
@@ -153,11 +153,12 @@ const VideoPlayer: React.FC = () => {
   }
 
   const getVideoSource = () => {
+    const token = localStorage.getItem('flixplayer-token');
     if (video.type === 'movie') {
-      return buildApiUrl(`/videos/stream/${video.filename}`);
+      return buildApiUrl(`/videos/stream/${video.filename}?token=${token}`);
     } else if (video.type === 'series' && selectedEpisode) {
       const episode = video.episodes?.find(ep => ep.id === selectedEpisode);
-      return episode ? buildApiUrl(`/videos/stream/${episode.filename}`) : '';
+      return episode ? buildApiUrl(`/videos/stream/${episode.filename}?token=${token}`) : '';
     }
     return '';
   };
@@ -172,10 +173,19 @@ const VideoPlayer: React.FC = () => {
         <video
           ref={videoRef}
           src={getVideoSource()}
+          controls={false}
+          preload="metadata"
+          crossOrigin="anonymous"
           className={`w-full bg-black ${isFullscreen ? 'h-full object-contain' : 'aspect-video'}`}
           onMouseMove={() => setShowControls(true)}
           onMouseLeave={() => setShowControls(false)}
           onTouchStart={() => setShowControls(true)}
+          onError={(e) => {
+            console.error('Video error:', e);
+            console.error('Video source:', getVideoSource());
+          }}
+          onLoadStart={() => console.log('Video loading started')}
+          onCanPlay={() => console.log('Video can play')}
         />
         
         <div 

@@ -410,6 +410,25 @@ app.delete('/videos/:id', authenticateToken, async (req, res) => {
 app.get('/videos/stream/:filename', authenticateToken, async (req, res) => {
   try {
     const { filename } = req.params;
+    
+    // Also check for token in query params for video streaming
+    if (!req.user && req.query.token) {
+      try {
+        const decoded = jwt.verify(req.query.token, JWT_SECRET);
+        const users = await readJsonFile(usersFile);
+        const user = users.find(u => u.id === decoded.userId);
+        if (user) {
+          req.user = { id: user.id, username: user.username, isAdmin: user.isAdmin };
+        }
+      } catch (error) {
+        return res.status(401).json({ error: 'Invalid token' });
+      }
+    }
+    
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
     const videoPath = path.join(videosDir, filename);
     
     try {
@@ -428,13 +447,15 @@ app.get('/videos/stream/:filename', authenticateToken, async (req, res) => {
       const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
       const chunksize = (end - start) + 1;
       
-      const stream = (await import('fs')).createReadStream(videoPath, { start, end });
+      const fs = await import('fs');
+      const stream = fs.createReadStream(videoPath, { start, end });
       
       res.writeHead(206, {
         'Content-Range': `bytes ${start}-${end}/${fileSize}`,
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
         'Content-Type': 'video/mp4',
+        'Cache-Control': 'no-cache'
       });
       
       stream.pipe(res);
@@ -442,9 +463,12 @@ app.get('/videos/stream/:filename', authenticateToken, async (req, res) => {
       res.writeHead(200, {
         'Content-Length': fileSize,
         'Content-Type': 'video/mp4',
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'no-cache'
       });
       
-      const stream = (await import('fs')).createReadStream(videoPath);
+      const fs = await import('fs');
+      const stream = fs.createReadStream(videoPath);
       stream.pipe(res);
     }
   } catch (error) {
